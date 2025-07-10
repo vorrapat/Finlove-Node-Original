@@ -24,14 +24,14 @@ const storage = multer.diskStorage({
 
 ///////////////////////////////////////////////////////////////////////////////
 //////////////////////////////// ลบส่วนนี้หาก manual ////////////////////////////
-const cors = require('cors');
+//const cors = require('cors');
 
 // อนุญาตให้ fin-love.com เข้าถึง API
-app.use(cors({
-    origin: 'https://fin-love.com',  // ตั้งค่าให้ตรงกับโดเมนของคุณ
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],  // ระบุ HTTP methods ที่อนุญาต
-    credentials: true  // หากต้องการให้ส่ง cookies หรือ header การยืนยัน
-}));
+//app.use(cors({
+    //origin: 'https://fin-love.com',  // ตั้งค่าให้ตรงกับโดเมนของคุณ
+    //methods: ['GET', 'POST', 'PUT', 'DELETE'],  // ระบุ HTTP methods ที่อนุญาต
+    //credentials: true  // หากต้องการให้ส่ง cookies หรือ header การยืนยัน
+//}));
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -1010,6 +1010,33 @@ app.post('/api_v2/dislike', (req, res) => {
     });
 });
 
+// ดึงผู้ใช้ที่เคยมากด Like user คนนี้ !!!ใหม่
+app.get('/api_v2/wholike', (req, res) => {
+    const userID = req.query.userID;  // userID ที่ล็อกอินอยู่ ต้องส่งมาจาก client
+
+    if (!userID) {
+        return res.status(400).json({ message: "กรุณาส่ง userID มาใน query string" });
+    }
+
+    const sql = `
+    SELECT DISTINCT u.userID, u.nickname, u.verify, u.imageFile
+    FROM userlike ul
+    JOIN user u ON ul.likerID = u.userID
+    WHERE ul.likedID = ?;
+`;
+
+
+    db.query(sql, [userID], (err, results) => {
+        if (err) {
+            console.error(err);
+            return res.status(500).json({ message: "เกิดข้อผิดพลาดในการดึงข้อมูล" });
+        }
+
+        res.json(results);  // ส่ง list user ที่มากดไลค์ user นี้
+    });
+});
+
+
 
 // API Check Match
 app.post('/api_v2/check_match', (req, res) => {
@@ -1361,8 +1388,6 @@ app.post('/api_v2/unblock-chat', (req, res) => {
         res.status(200).json({ success: 'Chat unblocked successfully' });
     });
 });
-
-
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
